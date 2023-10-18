@@ -1,42 +1,96 @@
 package com.example.todolist;
-
-import android.content.Intent;
 import android.os.Bundle;
 import android.widget.CalendarView;
-import android.widget.TextView;
+import android.widget.EditText;
+import android.widget.Button;
+import android.widget.ListView;
+import android.widget.ArrayAdapter;
+import android.widget.AdapterView;
+import android.view.View;
+import android.widget.AdapterView.OnItemClickListener;
+import android.widget.CheckBox;
 import androidx.appcompat.app.AppCompatActivity;
-import java.util.Date;
+import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
-
     private CalendarView calendarView;
-    private TextView selectedDateTextView;
-    private TodoManager todoManager;
+    private EditText editTextTask;
+    private Button buttonAdd;
+    private ListView listViewTasks;
+    private ArrayAdapter<TaskItem> tasksAdapter; // ArrayAdapter의 제네릭을 TaskItem으로 변경
+    private ArrayList<TaskItem> taskList; // ArrayList의 제네릭을 TaskItem으로 변경
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // TodoManager 초기화
-        todoManager = new TodoManager();
-
         calendarView = findViewById(R.id.calendarView);
-        selectedDateTextView = findViewById(R.id.selectedDateTextView);
+        editTextTask = findViewById(R.id.editTextTask);
+        buttonAdd = findViewById(R.id.buttonAdd);
+        listViewTasks = findViewById(R.id.listViewTasks);
 
-        calendarView.setOnDateChangeListener((view, year, month, dayOfMonth) -> {
-            // 선택된 날짜에 대한 처리
-            Date selectedDate = new Date(year - 1900, month, dayOfMonth); // Date 생성자는 deprecated되었지만 예제에서는 간단히 사용
-            int todoCount = todoManager.getTodoCountForDate(selectedDate);
-            selectedDateTextView.setText("할 일 개수: " + todoCount);
+        taskList = new ArrayList<>();
+        tasksAdapter = new ArrayAdapter<>(this, R.layout.list_item, R.id.taskText, taskList);
+        listViewTasks.setAdapter(tasksAdapter);
 
-            // 선택된 날짜를 WeeklyCalendarActivity로 전달하여 해당 주간 달력 표시
-            Intent intent = new Intent(MainActivity.this, WeeklyCalendarActivity.class);
-            intent.putExtra("selectedDate", selectedDate);
-            startActivity(intent);
+        calendarView.setOnDateChangeListener(new CalendarView.OnDateChangeListener() {
+            @Override
+            public void onSelectedDayChange(CalendarView view, int year, int month, int dayOfMonth) {
+                // 달력 선택일 변경 이벤트 처리
+            }
+        });
 
+        buttonAdd.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                String task = editTextTask.getText().toString();
+                if (!task.isEmpty()) {
+                    // 새로운 TaskItem 객체를 생성하고 목록에 추가
+                    TaskItem newTask = new TaskItem(task);
+                    taskList.add(newTask);
+                    tasksAdapter.notifyDataSetChanged();
+                    editTextTask.setText("");
+                }
+            }
+        });
+
+        listViewTasks.setOnItemClickListener(new OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                // 아이템 클릭 이벤트 처리
+                CheckBox checkBox = view.findViewById(R.id.checkBox);
+                TaskItem taskItem = taskList.get(position);
+                taskItem.setChecked(checkBox.isChecked());
+            }
         });
     }
+
+    // TaskItem 클래스 정의
+    public class TaskItem {
+        private String taskText;
+        private boolean checked;
+
+        public TaskItem(String taskText) {
+            this.taskText = taskText;
+            this.checked = false;
+        }
+
+        public String getTaskText() {
+            return taskText;
+        }
+
+        public boolean isChecked() {
+            return checked;
+        }
+
+        public void setChecked(boolean checked) {
+            this.checked = checked;
+        }
+
+        @Override
+        public String toString() {
+            return taskText;
+        }
+    }
 }
-
-
